@@ -16,6 +16,7 @@ using System.Xml;
 using System.Xml.Linq;
 using Sustainsys.Saml2.Metadata.Exceptions;
 using Sustainsys.Saml2.Metadata.Tokens;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Sustainsys.Saml2.WebSso
 {
@@ -67,11 +68,11 @@ namespace Sustainsys.Saml2.WebSso
             var signatureDescription = (SignatureDescription)CryptographyExtensions.CreateAlgorithmFromName(signingAlgorithmUrl);
             HashAlgorithm hashAlg = signatureDescription.CreateDigest();
             hashAlg.ComputeHash(Encoding.UTF8.GetBytes(queryString));
+
+            var privateKeyOld = message.SigningCertificate.PrivateKey;
+            var privateKeyNew = RSACertificateExtensions.GetRSAPrivateKey(message.SigningCertificate);
             AsymmetricSignatureFormatter asymmetricSignatureFormatter =
-                signatureDescription.CreateFormatter(
-                    EnvironmentHelpers.IsNetCore ? message.SigningCertificate.PrivateKey :
-                    ((RSACryptoServiceProvider)message.SigningCertificate.PrivateKey)
-                    .GetSha256EnabledRSACryptoServiceProvider());
+                signatureDescription.CreateFormatter(privateKeyNew);
             byte[] signatureValue = asymmetricSignatureFormatter.CreateSignature(hashAlg);
             queryString += "&Signature=" + Uri.EscapeDataString(Convert.ToBase64String(signatureValue));
             return queryString;
@@ -108,7 +109,7 @@ namespace Sustainsys.Saml2.WebSso
                     }
                 }
             }
-            catch(FormatException ex)
+            catch (FormatException ex)
             {
                 throw new FormatException($"\'{encodedPayload}\' is not a valid Base64 encoded string: {ex.Message}", ex);
             }

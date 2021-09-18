@@ -151,7 +151,7 @@ namespace Sustainsys.Saml2.Internal
             return xmlDoc.DocumentElement;
         }
 
-        internal static RSACryptoServiceProvider GetSha256EnabledRSACryptoServiceProvider(
+        internal static RSACryptoServiceProvider GetSha256EnabledRSACryptoServiceProviderWinOnly(
             this RSACryptoServiceProvider original)
         {
             // The provider is probably using the default ProviderType. That's
